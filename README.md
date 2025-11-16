@@ -20,22 +20,7 @@ nawy-task/
 
 ### Setup
 
-1. **Create environment file for backend:**
-   ```bash
-   cp be/.env.example be/.env  # If exists, or create manually
-   ```
-
-   Required environment variables in `be/.env`:
-   ```
-   DB_NAME=nawy_db
-   DB_USER=postgres
-   DB_PASSWORD=postgres
-   DB_HOST=postgres
-   DB_PORT=5432
-   PORT=4000
-   ```
-
-2. **Start all services with Docker Compose:**
+1. **Start all services with Docker Compose:**
    ```bash
    docker-compose up -d
    ```
@@ -45,7 +30,7 @@ nawy-task/
    - **Backend API** on port `4000`
    - **Frontend** on port `3000`
 
-3. **Access the application:**
+2. **Access the application:**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:4000
    - Swagger Docs: http://localhost:4000/api-docs
