@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: nawy-postgres
+    restart: unless-stopped
+    env_file:
+      - ./be/.env
+    environment:
+      POSTGRES_DB: ${DB_NAME:-nawy_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./be/database/seed.sql:/docker-entrypoint-initdb.d/seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nawy-network
+
+  backend:
+    build:
+      context: ./be
+      dockerfile: Dockerfile
+    container_name: nawy-backend
+    restart: unless-stopped
+    env_file:
+      - ./be/.env
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - PORT=4000
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./be:/app
+      - /app/node_modules
+    networks:
+      - nawy-network
+
+  frontend:
+    build:
+      context: ./fe
+      dockerfile: Dockerfile
+    container_name: nawy-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./fe:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - nawy-network
+
+networks:
+  nawy-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+

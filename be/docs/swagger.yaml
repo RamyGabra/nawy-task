@@ -1,0 +1,376 @@
+openapi: 3.0.3
+info:
+  title: Nawy Apartment API
+  description: API for managing apartment listings
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@nawy.com
+
+servers:
+  - url: http://localhost:4000
+    description: Development server
+  - url: https://api.nawy.com
+    description: Production server
+
+tags:
+  - name: Apartments
+    description: Apartment listing operations
+  - name: Health
+    description: Health check endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the health status of the server
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Server is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  message:
+                    type: string
+                    example: Server is running
+
+  /apartments:
+    get:
+      tags:
+        - Apartments
+      summary: List all apartments
+      description: Retrieve a list of all apartments with optional pagination and search. Search is performed across project name, unit name, and unit number (case-insensitive).
+      operationId: listApartments
+      parameters:
+        - name: q
+          in: query
+          description: Search term to filter apartments by project name, unit name, or unit number
+          required: false
+          schema:
+            type: string
+          example: "Alpha"
+        - name: limit
+          in: query
+          description: Maximum number of apartments to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            example: 10
+        - name: offset
+          in: query
+          description: Number of apartments to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            example: 0
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      apartments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Apartment'
+                      total:
+                        type: integer
+                        description: Total number of apartments
+                        example: 100
+                      limit:
+                        type: integer
+                        nullable: true
+                        example: 10
+                      offset:
+                        type: integer
+                        nullable: true
+                        example: 0
+                      searchTerm:
+                        type: string
+                        nullable: true
+                        description: The search term used (if any)
+                        example: "Alpha"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Apartments
+      summary: Create a new apartment
+      description: Create a new apartment listing
+      operationId: createApartment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateApartmentRequest'
+            examples:
+              luxuryApartment:
+                summary: Luxury Apartment Example
+                value:
+                  unitName: "Luxury Apartment A101"
+                  unitNumber: "A101"
+                  price: 2500000
+                  projectName: "Marina Heights"
+                  unitLocation: "New Cairo"
+                  area: 120
+                  bathrooms: 2
+                  bedrooms: 3
+                  floorNumber: "10"
+              studioApartment:
+                summary: Studio Apartment Example
+                value:
+                  unitName: "Modern Studio Unit"
+                  unitNumber: "S201"
+                  price: 1200000
+                  projectName: "Urban Living"
+                  unitLocation: "Heliopolis"
+                  area: 55
+                  bathrooms: 1
+                  bedrooms: 1
+                  floorNumber: "5"
+      responses:
+        '200':
+          description: Apartment created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Apartment created successfully
+                  data:
+                    $ref: '#/components/schemas/Apartment'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal server error or duplicate apartment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /apartments/{id}:
+    get:
+      tags:
+        - Apartments
+      summary: Get apartment by ID
+      description: Retrieve a specific apartment by its ID
+      operationId: getApartmentById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Apartment ID
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Apartment'
+        '400':
+          description: Invalid apartment ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Apartment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Apartment:
+      type: object
+      required:
+        - id
+        - unitName
+        - unitNumber
+        - price
+        - projectName
+        - unitLocation
+        - area
+        - bathrooms
+        - bedrooms
+        - floorNumber
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the apartment
+          example: 1
+        unitName:
+          type: string
+          description: Name of the apartment unit
+          example: "Luxury Apartment A101"
+        unitNumber:
+          type: string
+          description: Unit number or identifier
+          example: "A101"
+        price:
+          type: number
+          format: decimal
+          description: Price in currency units
+          example: 2500000.00
+        projectName:
+          type: string
+          description: Name of the project or building
+          example: "Marina Heights"
+        unitLocation:
+          type: string
+          description: Location or address of the unit
+          example: "New Cairo"
+        area:
+          type: integer
+          description: Area in square meters
+          example: 120
+        bathrooms:
+          type: integer
+          description: Number of bathrooms
+          minimum: 0
+          example: 2
+        bedrooms:
+          type: integer
+          description: Number of bedrooms
+          minimum: 0
+          example: 3
+        floorNumber:
+          type: string
+          description: Floor number or level
+          example: "10"
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          example: "2024-01-15T10:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2024-01-15T10:30:00.000Z"
+
+    CreateApartmentRequest:
+      type: object
+      required:
+        - unitName
+        - unitNumber
+        - price
+        - projectName
+        - unitLocation
+        - area
+        - bathrooms
+        - bedrooms
+        - floorNumber
+      properties:
+        unitName:
+          type: string
+          description: Name of the apartment unit
+          minLength: 1
+          example: "Luxury Apartment A101"
+        unitNumber:
+          type: string
+          description: Unit number or identifier
+          minLength: 1
+          example: "A101"
+        price:
+          type: number
+          format: decimal
+          description: Price in currency units (must be greater than 0)
+          minimum: 0.01
+          example: 2500000
+        projectName:
+          type: string
+          description: Name of the project or building
+          minLength: 1
+          example: "Marina Heights"
+        unitLocation:
+          type: string
+          description: Location or address of the unit
+          minLength: 1
+          example: "New Cairo"
+        area:
+          type: integer
+          description: Area in square meters (must be greater than 0)
+          minimum: 1
+          example: 120
+        bathrooms:
+          type: integer
+          description: Number of bathrooms (must be 0 or greater)
+          minimum: 0
+          example: 2
+        bedrooms:
+          type: integer
+          description: Number of bedrooms (must be 0 or greater)
+          minimum: 0
+          example: 3
+        floorNumber:
+          type: string
+          description: Floor number or level
+          minLength: 1
+          example: "10"
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: "Failed to fetch apartments"
+        error:
+          type: string
+          description: Detailed error description
+          example: "Database connection failed"
+
+    ValidationError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Validation error"
+        error:
+          type: string
+          example: "Unit name is required"
+
