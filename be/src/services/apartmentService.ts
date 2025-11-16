@@ -39,6 +39,7 @@ export class ApartmentService {
     const apartment = await this.apartmentRepository.findById(id);
     
     if (!apartment) {
+      console.warn('[Service] getApartmentById - Not found', { id });
       throw new NotFoundError('Apartment not found');
     }
 
@@ -51,6 +52,7 @@ export class ApartmentService {
   async createApartment(apartmentData: CreateApartmentDTO): Promise<Apartment> {
     // Validate required fields
     this.validateApartmentData(apartmentData);
+    console.debug('[Service] createApartment - Validation passed');
 
     // Check if unit number already exists in the same project
     const existing = await this.apartmentRepository.findAll();
@@ -59,6 +61,11 @@ export class ApartmentService {
     );
 
     if (duplicate) {
+      console.warn('[Service] createApartment - Duplicate found', {
+        unitNumber: apartmentData.unitNumber,
+        projectName: apartmentData.projectName,
+        existingId: duplicate.id,
+      });
       throw new ValidationError('Apartment with this unit number already exists in this project');
     }
 

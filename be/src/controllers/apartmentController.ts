@@ -20,12 +20,29 @@ export class ApartmentController {
       const offset = req.query.offset ? parseInt(req.query.offset as string) : undefined;
       const searchTerm = req.query.q as string | undefined;
 
+      console.log('[Controller] listApartments - Request received', {
+        limit,
+        offset,
+        searchTerm,
+      });
+
       const result = await this.apartmentService.listApartments(limit, offset, searchTerm);
+
+      console.log('[Controller] listApartments - Success', {
+        total: result.total,
+        returned: result.apartments.length,
+        searchTerm: result.searchTerm,
+      });
 
       res.status(200).json({
         data: result,
       });
     } catch (error) {
+      console.error('[Controller] listApartments - Error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
       res.status(500).json({
         message: 'Failed to fetch apartments',
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -41,7 +58,16 @@ export class ApartmentController {
     try {
       const id = parseInt(req.params.id);
 
+      console.log('[Controller] getApartmentById - Request received', {
+        id: req.params.id,
+        parsedId: id,
+      });
+
       if (isNaN(id)) {
+        console.warn('[Controller] getApartmentById - Invalid ID', {
+          providedId: req.params.id,
+        });
+
         res.status(400).json({
           message: 'Invalid apartment ID',
         });
@@ -50,16 +76,33 @@ export class ApartmentController {
 
       const apartment = await this.apartmentService.getApartmentById(id);
 
+      console.log('[Controller] getApartmentById - Success', {
+        id,
+        unitName: apartment.unitName,
+        projectName: apartment.projectName,
+      });
+
       res.status(200).json({
         data: apartment,
       });
     } catch (error) {
       if (error instanceof NotFoundError) {
+        console.warn('[Controller] getApartmentById - Not found', {
+          id: parseInt(req.params.id),
+          error: error.message,
+        });
+
         res.status(404).json({
           message: error.message,
         });
         return;
       }
+
+      console.error('[Controller] getApartmentById - Error', {
+        id: req.params.id,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
 
       res.status(500).json({
         message: 'Failed to fetch apartment',
@@ -86,7 +129,21 @@ export class ApartmentController {
         floorNumber: req.body.floorNumber,
       };
 
+      console.log('[Controller] createApartment - Request received', {
+        unitName: apartmentData.unitName,
+        unitNumber: apartmentData.unitNumber,
+        projectName: apartmentData.projectName,
+        price: apartmentData.price,
+      });
+
       const apartment = await this.apartmentService.createApartment(apartmentData);
+
+      console.log('[Controller] createApartment - Success', {
+        id: apartment.id,
+        unitName: apartment.unitName,
+        unitNumber: apartment.unitNumber,
+        projectName: apartment.projectName,
+      });
 
       res.status(200).json({
         message: 'Apartment created successfully',
@@ -99,9 +156,21 @@ export class ApartmentController {
       if (error instanceof ValidationError) {
         statusCode = 400;
         message = 'Validation error';
+        console.warn('[Controller] createApartment - Validation error', {
+          error: error.message,
+          data: {
+            unitName: req.body.unitName,
+            unitNumber: req.body.unitNumber,
+            projectName: req.body.projectName,
+          },
+        });
       } else {
         // Unknown error, keep 500
         message = 'Internal server error';
+        console.error('[Controller] createApartment - Error', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        });
       }
 
       res.status(statusCode).json({
