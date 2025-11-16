@@ -14,10 +14,17 @@ CREATE TABLE IF NOT EXISTS apartments (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes
+-- Enable pg_trgm extension for trigram indexes
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Create B-tree indexes (for exact matches and prefix searches)
 CREATE INDEX IF NOT EXISTS idx_apartments_project_name ON apartments(project_name);
 CREATE INDEX IF NOT EXISTS idx_apartments_name ON apartments(unit_name);
 CREATE INDEX IF NOT EXISTS idx_apartments_unit_number ON apartments(unit_number);
+
+-- Create trigram indexes (for substring searches with %term%)
+CREATE INDEX IF NOT EXISTS idx_apartments_project_name_trgm ON apartments USING gin (project_name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_apartments_unit_name_trgm ON apartments USING gin (unit_name gin_trgm_ops);
 
 
 -- Insert sample apartment records
