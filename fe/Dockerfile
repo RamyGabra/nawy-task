@@ -14,6 +14,5 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
-# Start Next.js in dev mode (can be overridden in docker-compose)
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-c", "npm run dev"]
 

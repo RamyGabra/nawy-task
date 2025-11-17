@@ -14,6 +14,5 @@ COPY . .
 # Expose port
 EXPOSE 4000
 
-# Start the application in dev mode (can be overridden in docker-compose)
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-c", "npm run dev"]
 
